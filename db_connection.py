@@ -1,7 +1,8 @@
 import mysql.connector
 import hashlib
 
-# Conecta ao banco de dados MySQL
+# ------------------- CONEXÃO -------------------
+
 def conectar():
     try:
         conn = mysql.connector.connect(
@@ -11,7 +12,7 @@ def conectar():
             database='ordem_servico'
         )
         if conn.is_connected():
-            print("\u2705 Conectado ao banco de dados com sucesso!")
+            print("✅ Conectado ao banco de dados com sucesso!")
             return conn
     except mysql.connector.Error as err:
         print(f"❌ Erro ao conectar: {err}")
@@ -41,7 +42,17 @@ def inserir_cliente(conn, nome, email, telefone):
 
 def listar_ordens(conn):
     cursor = conn.cursor()
-    cursor.execute("SELECT id, cliente_id, data_abertura, status, total FROM ordens;")
+    query = """
+        SELECT 
+            o.id, 
+            c.nome AS cliente_nome, 
+            o.data_abertura, 
+            o.status, 
+            o.total
+        FROM ordens o
+        JOIN clientes c ON o.cliente_id = c.id
+    """
+    cursor.execute(query)
     ordens = cursor.fetchall()
     cursor.close()
     return ordens
@@ -212,7 +223,7 @@ def deletar_item(conn, item_id):
     except mysql.connector.Error as err:
         print(f"❌ Erro ao deletar item: {err}")
 
-# ------------------- ATUALIZAÇÃO DO TOTAL -------------------
+# ------------------- ATUALIZAR TOTAL -------------------
 
 def atualizar_total_ordem(conn, ordem_id):
     try:
@@ -232,43 +243,14 @@ def atualizar_total_ordem(conn, ordem_id):
     except mysql.connector.Error as err:
         print(f"❌ Erro ao atualizar total da ordem: {err}")
 
-# ------------------- VALIDAÇÃO DE USUÁRIO -------------------
+# ------------------- USUÁRIO -------------------
 
-def validar_usuario(conexao, usuario, senha):
-    cursor = conexao.cursor(buffered=True)
+def validar_usuario(conn, usuario, senha):
+    cursor = conn.cursor(buffered=True)
     senha_hash = hashlib.sha256(senha.encode('utf-8')).hexdigest()
     query = "SELECT id FROM usuarios WHERE usuario = %s AND senha = %s"
     cursor.execute(query, (usuario, senha_hash))
     resultado = cursor.fetchone()
     cursor.close()
     return resultado is not None
-
-# ------------------- EXECUÇÃO DE TESTE -------------------
-
-if __name__ == "__main__":
-    conexao = conectar()
-    if conexao:
-        clientes = listar_clientes(conexao)
-        ordens = listar_ordens(conexao)
-        servicos = listar_servicos(conexao)
-        itens = listar_itens(conexao)
-
-        print("----- CLIENTES -----")
-        for cliente in clientes:
-            print(f"ID: {cliente[0]}, Nome: {cliente[1]}, Email: {cliente[2]}, Telefone: {cliente[3]}")
-
-        print("\n----- ORDENS -----")
-        for ordem in ordens:
-            print(f"ID: {ordem[0]}, Cliente ID: {ordem[1]}, Data: {ordem[2]}, Status: {ordem[3]}, Total: {ordem[4]}")
-
-        print("\n----- SERVIÇOS -----")
-        for servico in servicos:
-            print(f"ID: {servico[0]}, Ordem ID: {servico[1]}, Descrição: {servico[2]}, Valor: {servico[3]}")
-
-        print("\n----- ITENS -----")
-        for item in itens:
-            print(f"ID: {item[0]}, Ordem ID: {item[1]}, Nome: {item[2]}, Quantidade: {item[3]}, Preço unitário: {item[4]}")
-
-        conexao.close()
-
-
+#luana comentário
